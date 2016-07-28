@@ -1,8 +1,4 @@
-/*
-TODO:
-	в GIF нужно детектировать наличие прозрачности. парсить все точки и искать первую у которой альфа прозрачный ?
-
-*/
+// NEED LIBRARY: libgdiplus
 
 #include <stdlib.h>
 #include <stdio.h>
