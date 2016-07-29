@@ -173,18 +173,21 @@ int ParseParams(int argc, char ** argv)
 			{
 				// getting value of switch (after ':' symbol)
 				vi=0;
-				viErr = NULL;
+				viErr = PCHAR(1); // set error
 				vf=0;
-				vfErr = NULL;
+				vfErr = PCHAR(1); // set error
 				v = strchr(p, ':'); // search for splitter
 				if(v)
 				{
-					*v = '\x00'; // split parameter and value
+					*v = '\0'; // split parameter and value
 					v++; // string value
-					vi = (int)strtol(v, &viErr, 10); // getting int value (on success viErr will point to the '\0' char)
-					viErr = (PCHAR)((UINT)*viErr); // viErr == NULL (on success) or !NULL (on errors)
-					vf = (double)strtof(v, &vfErr); // getting float value
-					vfErr = (PCHAR)((UINT)*vfErr); // viErr == NULL (on success) or !NULL (on errors)
+					if(*v) // not empty string
+					{
+						vi = (int)strtol(v, &viErr, 10); // getting int value (on success viErr will point to the '\0' char)
+						viErr = (PCHAR)!!*viErr;
+						vf = (double)strtof(v, &vfErr); // getting float value
+						vfErr = (PCHAR)!!*vfErr;
+					}
 				}
 				if(strlen(p)>2) // max length of parameter name (including '-' char)
 					fn = 1;
@@ -210,13 +213,9 @@ int ParseParams(int argc, char ** argv)
 			// parse file names
 			switch(fn)
 			{
-				case 1: // input image
-					sInImg.add(p);
-				break;
-
-				case 2: sData.add(p); break;  // data file
-
-				case 3: sOutImg.add(p); break;  // out image
+				case 1: sInImg.str(p); break;// input image
+				case 2: sData.str(p); break;  // data file
+				case 3: sOutImg.str(p); break;  // out image
 
 				default:
 					return 1;
@@ -240,14 +239,14 @@ int ParseParams(int argc, char ** argv)
 				case 'k': bPauseOnExit = false; break;// dont "press any key" on exit
 
 				case 'b': // minimum bits per channel (1..8)
-					if(!v || viErr || vi<1 || vi>8)
+					if(viErr || vi<1 || vi>8)
 						err = true;
 					else
 						datBPCmin = vi;
 				break;
 
 				case 'B': // maximum bits per channel (1..8)
-					if(!v || viErr || vi<1 || vi>8)
+					if(viErr || vi<1 || vi>8)
 						err = true;
 					else
 						datBPCmax = vi;
@@ -256,32 +255,28 @@ int ParseParams(int argc, char ** argv)
 				case 'a': // force alpha (0/1 == disable/enable)
 					if(!strcmp(v, "d"))
 						imgAlphaUse = 2; // delete alpha
-					else if(!v || viErr || vi<0 || vi>1)
+					else if(viErr || vi<0 || vi>1)
 						err=true;
 					else
 						imgAlphaUse=vi;
 				break;
 
 				case 'n': // add noise (0..100%, 0 == disable)
-                    if(viErr || vi<0 || vi > 100)
+					if(!v)
+						imgNoise = random(5,50); // random density of noise
+					else if(viErr || vi<0 || vi > 100)
 						err = true;
 					else
-					{
-						if(!v)
-							imgNoise = random(5,50); // random density of noise
-						else if(vi >= 0)
-							imgNoise = vi;
-					}
-
+						imgNoise = vi;
 				break;
 
 				case 'p': // password
-                    if(!v || !strlen(v))
+                    if(!v || !*v)
 						err = true;
 					else
 					{
 						bCrypt = true;
-						sPassword.add(v);
+						sPassword.str(v);
 					}
 				break;
 
